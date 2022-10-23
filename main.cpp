@@ -31,6 +31,10 @@ using namespace std::literals::string_literals;
 //  @see: https://stackoverflow.com/questions/16944750/c-unicode-characters-printing
 
 //  MARK: - Definitions
+enum OrdinalFmt {
+  DEC, HEX, OCT,
+};
+
 static
 void transformer(void);
 [[deprecated]]
@@ -42,7 +46,7 @@ void show0444(void);
 static
 void show2780(void);
 static
-void print_ordinals(std::vector<std::size_t> const &ordinals, bool hex = false);
+void print_ordinals(std::vector<std::size_t> const & ordinals, OrdinalFmt const dxo = DEC);
 
 // --------------------------------------------------------------
 //  print a UTF-16 codepoint
@@ -118,13 +122,18 @@ void transformer(void) {
   std::cout << "g = "s << quoted(g) << '\n';
 
   std::cout << std::string(60, '-') << '\n';
+#ifdef XPLUS_
+  std::cout << "Transform ordinals with custom plus function\n"s;
+#else
   std::cout << "Transform ordinals with std::plus\n"s;
+#endif /* XPLUS_ */
   std::vector<std::size_t> ordinals;
   std::transform(s.cbegin(), s.cend(), std::back_inserter(ordinals),
                  [](unsigned char c) { return c; });
 
   print_ordinals(ordinals);
-  print_ordinals(ordinals, true);
+  print_ordinals(ordinals, OrdinalFmt::HEX);
+  print_ordinals(ordinals, OrdinalFmt::OCT);
 
 #ifdef XPLUS_
   [[maybe_unused]]
@@ -138,21 +147,22 @@ void transformer(void) {
     std::cout << std::dec;
     return sum;
   };
-  #endif  /* XPLUS_ */
+#endif /* XPLUS_ */
 
   std::transform(ordinals.cbegin(),
                  ordinals.cend(),
                  ordinals.cbegin(),
                  ordinals.begin(),
-  #ifdef XPLUS_
+#ifdef XPLUS_
                  xplus
-  #else
+#else
                  std::plus<>{}
-  #endif  /* XPLUS_ */
+#endif /* XPLUS_ */
   );
 
   print_ordinals(ordinals);
-  print_ordinals(ordinals, true);
+  print_ordinals(ordinals, OrdinalFmt::HEX);
+  print_ordinals(ordinals, OrdinalFmt::OCT);
 
   std::cout << std::string(60, '-') << '\n';
   std::cout << "std::transform and std::plus\n"s;
@@ -322,11 +332,32 @@ void show2780(void) {
 /*
  *  MARK: print_ordinals()
  */
-void print_ordinals(std::vector<std::size_t> const &ordinals, bool hex) {
-  std::cout << "ordinals: "s;
+void print_ordinals(std::vector<std::size_t> const & ordinals, OrdinalFmt const dxo) {
+  switch (dxo) {
+    case OrdinalFmt::HEX:
+      std::cout << "ordinals [hex]: "s;
+      break;
+    case OrdinalFmt::OCT:
+      std::cout << "ordinals [oct]: "s;
+      break;
+    case OrdinalFmt::DEC:
+    default:
+      std::cout << "ordinals [dec]: "s;
+      break;
+  }
+
   for (std::size_t ord : ordinals) {
-    if (hex) {
-      std::cout << std::hex;
+    switch (dxo) {
+      case OrdinalFmt::HEX:
+        std::cout << std::hex;
+        break;
+      case OrdinalFmt::OCT:
+        std::cout << std::oct;
+        break;
+      case OrdinalFmt::DEC:
+      default:
+        std::cout << std::dec;
+        break;
     }
     std::cout << std::setw(3) << ord << ' ';
     std::cout << std::dec;
